@@ -63,7 +63,8 @@ fn on_chunk(new_chunks: Query<&Transform, Added<RoadChunk>>, mut populate: Event
             populate.send(SpawnWall {
                 kind,
                 at: chunk.translation.xz()
-                    + Vec2::X * rand::thread_rng().gen_range(-max_shift..max_shift),
+                    + Vec2::X * rand::thread_rng().gen_range(-max_shift..=max_shift)
+                    + Vec2::Y * rand::thread_rng().gen_range(-2. ..=2.),
             });
         }
     }
