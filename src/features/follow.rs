@@ -4,6 +4,8 @@ use bevy::{math::Vec3Swizzles, prelude::*};
 
 use crate::macros::*;
 
+use super::{damage::DamageEntry, hp::HitPoints};
+
 pub struct FollowPlugin;
 
 impl Plugin for FollowPlugin {
@@ -46,6 +48,7 @@ pub struct Follow2d {
     pub kind: Follow2dKind,
     pub target: FollowTarget,
     pub target_global: bool,
+    pub remove_if_no_target: bool,
     pub diff: Vec2,
     pub leeway: f32,
 }
@@ -55,6 +58,7 @@ impl Follow2d {
             kind: Follow2dKind::Snap,
             target: FollowTarget::None,
             target_global: false,
+            remove_if_no_target: false,
             diff: default(),
             leeway: default(),
         }
@@ -71,26 +75,45 @@ impl Follow2d {
         self.kind = kind;
         self
     }
+    pub fn auto_despawn(mut self, val: bool) -> Self {
+        self.remove_if_no_target = val;
+        self
+    }
 }
 
 pub fn follow_diff_calc(
+    mut commands: Commands,
     time: Res<Time>,
-    mut followers: Query<(&Transform, &mut Follow2d)>,
-    transforms: Query<(&Transform, &GlobalTransform)>,
+    mut followers: Query<(&Transform, &mut Follow2d, Option<&HitPoints>, Entity)>,
+    targets: Query<(&Transform, &GlobalTransform)>,
+    mut damage_bus: EventWriter<DamageEntry>,
 ) {
-    for (tr, mut follow) in followers.iter_mut() {
+    for (tr, mut follow, hp, e) in followers.iter_mut() {
         let target = {
             match follow.target {
                 FollowTarget::Entity(target) => {
-                    let (target, target_g) = ok_or_skip!(transforms.get(target));
-                    {
-                        if follow.target_global {
-                            target_g.translation()
-                        } else {
-                            target.translation
+                    if let Ok((target, target_g)) = targets.get(target) {
+                        {
+                            if follow.target_global {
+                                target_g.translation()
+                            } else {
+                                target.translation
+                            }
                         }
+                        .xz()
+                    } else if follow.remove_if_no_target {
+                        if let Some(hp) = hp {
+                            damage_bus.send(DamageEntry {
+                                target: e,
+                                amount: hp.max,
+                            });
+                        } else {
+                            commands.entity(e).despawn_recursive();
+                        }
+                        continue;
+                    } else {
+                        continue;
                     }
-                    .xz()
                 }
                 FollowTarget::Vec(tr) => tr.xz(),
                 FollowTarget::None => continue,
@@ -112,9 +135,11 @@ pub fn follow_diff_calc(
             }
 
             Follow2dKind::Linear { speed } => {
-                follow.diff = (target - tr.translation.xz())
-                    .normalize_or_zero()
-                    .mul(speed * time.delta_seconds());
+                let diff = target - tr.translation.xz();
+                follow.diff = diff.normalize_or_zero().mul(speed * time.delta_seconds());
+                if follow.diff.length_squared() > diff.length_squared() {
+                    follow.diff = diff;
+                }
             }
 
             Follow2dKind::Snap => {

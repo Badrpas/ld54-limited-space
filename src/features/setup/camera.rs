@@ -8,13 +8,15 @@ impl Plugin for CameraPlugin {
     }
 }
 
-
-
 pub fn camera_system(
     mut commands: Commands,
 ) {
     // camera
     commands.spawn(Camera3dBundle {
+        camera: Camera {
+            hdr: true,
+            ..default()
+        },
         transform: Transform::from_xyz(0.0, 12.5, 15.0)
             .looking_at(Vec3::ZERO, Vec3::Y),
         ..default()

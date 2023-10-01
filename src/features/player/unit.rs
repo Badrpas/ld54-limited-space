@@ -1,4 +1,7 @@
-use std::{time::Duration, collections::VecDeque};
+use std::{
+    collections::VecDeque,
+    time::{Duration, Instant},
+};
 
 use bevy::{math::Vec3Swizzles, prelude::*};
 use bevy_tweening::{lens::TransformScaleLens, *};
@@ -10,7 +13,7 @@ use crate::{
         hp::HitPoints,
         player::PlayerUnit,
         road::chunk::CHUNK_SIZE,
-        team::Team,
+        team::Team, hp_ui::HUD,
     },
     macros::*,
     util::sunflower::sunflower,
@@ -33,6 +36,32 @@ impl Plugin for UnitPlugin {
 #[derive(Event, PartialEq, Eq)]
 pub enum UnitSpawnEvent {
     New,
+}
+
+#[derive(Component)]
+pub struct ShootInfo {
+    pub last_shot: Duration,
+    pub cooldown: Duration,
+}
+
+impl ShootInfo {
+    pub fn new(cooldown_seconds: f32) -> Self {
+        let cooldown = Duration::from_secs_f32(cooldown_seconds);
+        Self {
+            last_shot: Duration::ZERO,
+            cooldown,
+        }
+    }
+    pub fn is_ready(&self, time: &Res<Time>) -> bool {
+        time.elapsed() >= self.last_shot + self.cooldown
+    }
+    pub fn try_shoot(&mut self, time: &Res<Time>) -> bool {
+        if self.is_ready(time) {
+            self.last_shot = time.elapsed();
+            return true;
+        }
+        false
+    }
 }
 
 fn trigger_add_unit(kb: Res<Input<KeyCode>>, mut ev_writer: EventWriter<UnitSpawnEvent>) {
@@ -61,6 +90,7 @@ fn add_unit(
                 .spawn((
                     Team::Player,
                     HitPoints::new(10.),
+                    HUD,
                     PlayerUnit,
                     Follow2d::new().kind(Follow2dKind::Exponential { seconds: 0.3 }),
                     PbrBundle {
@@ -69,6 +99,7 @@ fn add_unit(
                         transform: Transform::from_xyz(0.0, 1.0, 0.0),
                         ..default()
                     },
+                    ShootInfo::new(0.7),
                 ))
                 .set_parent(root);
         }

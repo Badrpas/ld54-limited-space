@@ -11,6 +11,7 @@ pub mod team;
 pub mod brains;
 pub mod end;
 pub mod hp_ui;
+pub mod damage;
 use bevy::prelude::*;
 
 pub struct FeaturesPlugin;
@@ -31,6 +32,7 @@ impl Plugin for FeaturesPlugin {
         app.add_plugins(brains::BrainsPlugin);
         app.add_plugins(end::EndPlugin);
         app.add_plugins(hp_ui::HpUiPlugin);
+        app.add_plugins(damage::DamagePlugin);
     }
 }
 

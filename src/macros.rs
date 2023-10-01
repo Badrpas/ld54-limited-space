@@ -1,13 +1,4 @@
 mod kek {
-    macro_rules! filter_cmd {
-        ($cmds:ident, $pat:pat) => {
-            $cmds.0.iter().filter(|(_, cmd)| match &cmd.op_code {
-                $pat => true,
-                _ => false,
-            })
-        };
-    }
-    pub(crate) use filter_cmd;
 
     macro_rules! get_or_skip {
         ($p:pat = $e:expr => $name:ident) => {

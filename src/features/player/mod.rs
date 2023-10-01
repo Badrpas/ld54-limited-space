@@ -1,6 +1,8 @@
 pub mod camera_follow;
 pub mod controls;
 pub mod unit;
+pub mod unit_shoot;
+pub mod projectile;
 use bevy::prelude::*;
 
 use self::unit::UnitSpawnEvent;
@@ -13,6 +15,8 @@ impl Plugin for PlayerPlugin {
         app.add_plugins(controls::ControlsPlugin);
         app.add_plugins(camera_follow::CameraFollowPlugin);
         app.add_plugins(unit::UnitPlugin);
+        app.add_plugins(unit_shoot::UnitShootPlugin);
+        app.add_plugins(projectile::ProjectilePlugin);
     }
 }
 

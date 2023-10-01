@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{features::{road::enemy::{Speed, DamageInvoker}, player::{PlayerUnit, PlayerRoot, unit::get_unit_radius}, hp::HitPoints}, macros::*};
+use crate::{features::{road::enemy::{Speed, DamageInvoker}, player::{PlayerUnit, PlayerRoot, unit::get_unit_radius}, hp::HitPoints, damage::DamageEntry}, macros::*};
 
 pub struct SlugPlugin;
 
@@ -19,7 +19,7 @@ pub fn slug_system(
     root: Query<&Transform, (With<PlayerRoot>, Without<Speed>)>,
     units: Query<(&GlobalTransform, Entity), With<PlayerUnit>>,
     mut npcs: Query<(&mut Transform, &Speed, &mut DamageInvoker)>,
-    mut hps: Query<&mut HitPoints>,
+    mut damages: EventWriter<DamageEntry>,
 ) {
     let root = ok_or_ret!(root.get_single());
     let radius = get_unit_radius(units.iter().len());
@@ -35,9 +35,10 @@ pub fn slug_system(
             diff.y = 0.;
             if diff.length() <= 1. {
                 if di.invoke() {
-                    log::info!("Do damage");
-                    let mut hp = ok_or_skip!(hps.get_mut(closest.1));
-                    hp.current -= di.amount.min(hp.current);
+                    damages.send(DamageEntry {
+                        target: closest.1,
+                        amount: di.amount,
+                    });
                 }
             } else {
                 let dir = diff.normalize();

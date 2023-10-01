@@ -9,7 +9,7 @@ use crate::{
         hp::HitPoints,
         player::{PlayerRoot, PlayerUnit},
         road::chunk::CHUNK_SIZE,
-        team::Team,
+        team::Team, hp_ui::HUD,
     },
     macros::*, util::sunflower::sunflower,
 };
@@ -82,6 +82,7 @@ pub fn spawn_enemy(
                 DamageInvoker::new(1.2, 0.2),
                 Enemy,
                 Team::Enemy,
+                HUD,
                 HitPoints::new(10.),
                 Follow2d::new(),
                 SpatialBundle {

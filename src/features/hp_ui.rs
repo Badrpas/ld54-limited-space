@@ -16,11 +16,13 @@ impl Plugin for HpUiPlugin {
 }
 
 #[derive(Component)]
+pub struct HUD;
+#[derive(Component)]
 struct HpUiRef(Entity);
 
 fn hp_ui_system(
     mut commands: Commands,
-    hps: Query<(Entity, &HitPoints, Option<&HpUiRef>), Changed<HitPoints>>,
+    hps: Query<(Entity, &HitPoints, Option<&HpUiRef>), (Changed<HitPoints>, With<HUD>)>,
     mut uis: Query<(&mut Transform, &mut Visibility, &mut Animator<Transform>)>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
