@@ -1,14 +1,18 @@
-use bevy::prelude::*;
+use std::{time::Duration, collections::VecDeque};
+
+use bevy::{math::Vec3Swizzles, prelude::*};
+use bevy_tweening::{lens::TransformScaleLens, *};
 use rand::Rng;
 
 use crate::{
     features::{
-        follow::{Follow2d, FollowTarget, Follow2dKind},
+        follow::{Follow2d, Follow2dKind, FollowTarget},
         hp::HitPoints,
         player::PlayerUnit,
         road::chunk::CHUNK_SIZE,
         team::Team,
     },
+    macros::*,
     util::sunflower::sunflower,
 };
 
@@ -75,11 +79,32 @@ pub fn get_unit_radius(n: usize) -> f32 {
     CHUNK_SIZE.min((n as f32).sqrt() / 2.)
 }
 
-fn reposition_units(mut units: Query<&mut Follow2d, With<PlayerUnit>>) {
+fn reposition_units(
+    mut last_count: Local<usize>,
+    mut buf: Local<VecDeque<(f32, f32)>>,
+    mut units: Query<(&mut Follow2d, &Transform), With<PlayerUnit>>,
+) {
     let count = units.iter().len();
+    if *last_count == count {
+        return;
+    }
+    *last_count = count;
+
     let max_radius = get_unit_radius(count);
-    for (i, mut unit) in units.iter_mut().enumerate() {
-        let (x, y) = sunflower(i + 1, count, 2.0, max_radius);
+
+    buf.clear();
+    for i in 0..count {
+        buf.push_front(sunflower(i, count, 2.0, max_radius));
+    }
+
+    for (mut unit, tr) in units.iter_mut() {
+        let unit_pos = tr.translation.xz();
+        let (index, &(x, y)) = some_or_skip!(buf.iter().enumerate().min_by(|a, b| {
+            unit_pos
+                .distance_squared((*a.1).into())
+                .total_cmp(&unit_pos.distance_squared((*b.1).into()))
+        }));
+        buf.remove(index);
         unit.target = Vec3::new(x, 0., y).into();
     }
 }

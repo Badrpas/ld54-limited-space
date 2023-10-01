@@ -75,7 +75,7 @@ pub fn spawn_enemy(
                     RigidBody::Dynamic,
                     Collider::ball(0.5),
                     Restitution::coefficient(0.0),
-                    LockedAxes::TRANSLATION_LOCKED_Y,
+                    LockedAxes::TRANSLATION_LOCKED_Y | LockedAxes::ROTATION_LOCKED,
                 ),
                 Name::new("NPC"),
                 Speed(4.),

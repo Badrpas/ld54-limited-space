@@ -37,7 +37,7 @@ pub fn slug_system(
                 if di.invoke() {
                     log::info!("Do damage");
                     let mut hp = ok_or_skip!(hps.get_mut(closest.1));
-                    hp.current -= di.amount;
+                    hp.current -= di.amount.min(hp.current);
                 }
             } else {
                 let dir = diff.normalize();

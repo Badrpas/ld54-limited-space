@@ -1,11 +1,11 @@
+use std::time::Duration;
+
 use bevy::prelude::*;
+use bevy_tweening::{lens::TransformScaleLens, *};
 
 use crate::macros::*;
 
-use super::{
-    follow::{Follow2d, FollowTarget},
-    hp::HitPoints,
-};
+use super::{follow::Follow2d, hp::HitPoints};
 
 pub struct HpUiPlugin;
 
@@ -20,8 +20,8 @@ struct HpUiRef(Entity);
 
 fn hp_ui_system(
     mut commands: Commands,
-    hps: Query<(Entity, &HitPoints, Option<&HpUiRef>) /* , Changed<HitPoints> */>,
-    mut uis: Query<(&mut Transform, &mut Visibility)>,
+    hps: Query<(Entity, &HitPoints, Option<&HpUiRef>), Changed<HitPoints>>,
+    mut uis: Query<(&mut Transform, &mut Visibility, &mut Animator<Transform>)>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
@@ -33,6 +33,14 @@ fn hp_ui_system(
                     .spawn((
                         Follow2d::new().target(e).global(true),
                         SpatialBundle::HIDDEN_IDENTITY,
+                        Animator::new(Tween::new(
+                            EaseMethod::Linear,
+                            Duration::ZERO,
+                            TransformScaleLens {
+                                start: Vec3::ONE,
+                                end: Vec3::ONE,
+                            },
+                        )),
                     ))
                     .with_children(|cmd| {
                         cmd.spawn(PbrBundle {
@@ -61,9 +69,26 @@ fn hp_ui_system(
                 ui_e
             }
         };
-        let (mut ui, mut v) = ok_or_skip!(uis.get_mut(ui_e));
-        ui.scale.x = hp.current / hp.max;
-        if ui.scale.x >= 0.99 {
+
+        let (ui, mut v, mut a) = ok_or_skip!(uis.get_mut(ui_e));
+
+        a.set_tweenable(Tween::new(
+            // Use a quadratic easing on both endpoints.
+            EaseFunction::QuadraticInOut,
+            // Animation time (one way only; for ping-pong it takes 2 seconds
+            // to come back to start).
+            Duration::from_secs_f32(0.1),
+            TransformScaleLens {
+                start: ui.scale.clone(),
+                end: {
+                    let mut scale = ui.scale.clone();
+                    scale.x = hp.current / hp.max;
+                    scale
+                },
+            },
+        ));
+
+        if hp.current / hp.max >= 0.99 {
             *v = Visibility::Hidden;
         } else {
             *v = Visibility::Visible;

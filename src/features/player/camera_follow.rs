@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::features::follow::{Follow2d, Follow2dKind, FollowTarget};
+use crate::features::follow::{Follow2d, Follow2dKind};
 
 use super::PlayerRoot;
 
