@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::features::follow::{Follow2d, FollowTarget};
+use crate::features::follow::{Follow2d, Follow2dKind, FollowTarget};
 
 use super::PlayerRoot;
 
@@ -43,8 +43,9 @@ fn init_camera_follow(
     if let Ok(camera) = camera.get_single() {
         commands.entity(camera).insert(
             Follow2d::new()
-                .target(FollowTarget::Entity(camera_mount))
-                .target_global(true),
+                .target(camera_mount)
+                .kind(Follow2dKind::Exponential { seconds: 0.4 })
+                .global(true),
         );
         **init = true;
     } else {

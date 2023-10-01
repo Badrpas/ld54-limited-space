@@ -1,3 +1,5 @@
+use std::ops::Mul;
+
 use bevy::{math::Vec3Swizzles, prelude::*};
 
 use crate::macros::*;
@@ -16,10 +18,32 @@ pub enum FollowTarget {
     Entity(Entity),
     Vec(Vec3),
 }
+impl From<Entity> for FollowTarget {
+    fn from(value: Entity) -> Self {
+        FollowTarget::Entity(value)
+    }
+}
+impl From<()> for FollowTarget {
+    fn from(_: ()) -> Self {
+        FollowTarget::None
+    }
+}
+impl From<Vec3> for FollowTarget {
+    fn from(value: Vec3) -> Self {
+        FollowTarget::Vec(value)
+    }
+}
+
+#[derive(Reflect)]
+pub enum Follow2dKind {
+    Exponential { seconds: f32 },
+    Linear { speed: f32 },
+    Snap,
+}
 
 #[derive(Component, Reflect)]
 pub struct Follow2d {
-    pub lag_seconds: f32,
+    pub kind: Follow2dKind,
     pub target: FollowTarget,
     pub target_global: bool,
     pub diff: Vec2,
@@ -28,24 +52,24 @@ pub struct Follow2d {
 impl Follow2d {
     pub fn new() -> Self {
         Self {
-            lag_seconds: 0.3,
+            kind: Follow2dKind::Snap,
             target: FollowTarget::None,
             target_global: false,
             diff: default(),
             leeway: default(),
         }
     }
-    pub fn target(self, val: FollowTarget) -> Self {
-        Self {
-            target: val,
-            ..self
-        }
+    pub fn target<F: Into<FollowTarget>>(mut self, val: F) -> Self {
+        self.target = val.into();
+        self
     }
-    pub fn target_global(self, val: bool) -> Self {
-        Self {
-            target_global: val,
-            ..self
-        }
+    pub fn global(mut self, val: bool) -> Self {
+        self.target_global = val;
+        self
+    }
+    pub fn kind(mut self, kind: Follow2dKind) -> Self {
+        self.kind = kind;
+        self
     }
 }
 
@@ -73,15 +97,29 @@ pub fn follow_diff_calc(
             }
         };
 
-        let delta = follow_exp_diff(
-            tr.translation.xz(),
-            target,
-            follow.lag_seconds,
-            time.delta_seconds(),
-            follow.leeway,
-        );
-        if delta.length() > 0.01 {
-            follow.diff = delta;
+        match follow.kind {
+            Follow2dKind::Exponential { seconds } => {
+                let delta = follow_exp_diff(
+                    tr.translation.xz(),
+                    target,
+                    seconds,
+                    time.delta_seconds(),
+                    follow.leeway,
+                );
+                if delta.length() > 0.01 {
+                    follow.diff = delta;
+                }
+            }
+
+            Follow2dKind::Linear { speed } => {
+                follow.diff = (target - tr.translation.xz())
+                    .normalize_or_zero()
+                    .mul(speed * time.delta_seconds());
+            }
+
+            Follow2dKind::Snap => {
+                follow.diff = target - tr.translation.xz();
+            }
         }
     }
 }

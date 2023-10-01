@@ -8,7 +8,7 @@ impl Plugin for HpPlugin {
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Reflect)]
 pub struct HitPoints {
     pub current: f32,
     pub max: f32,

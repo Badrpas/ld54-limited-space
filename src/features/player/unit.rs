@@ -1,12 +1,9 @@
-use bevy::{
-    input::{common_conditions::input_just_pressed, keyboard::KeyboardInput},
-    prelude::*,
-};
+use bevy::prelude::*;
 use rand::Rng;
 
 use crate::{
     features::{
-        follow::{Follow2d, FollowTarget},
+        follow::{Follow2d, FollowTarget, Follow2dKind},
         hp::HitPoints,
         player::PlayerUnit,
         road::chunk::CHUNK_SIZE,
@@ -61,7 +58,7 @@ fn add_unit(
                     Team::Player,
                     HitPoints::new(10.),
                     PlayerUnit,
-                    Follow2d::new(),
+                    Follow2d::new().kind(Follow2dKind::Exponential { seconds: 0.3 }),
                     PbrBundle {
                         mesh: meshes.add(Mesh::from(shape::Capsule::default())),
                         material: materials.add(Color::rgb(r, g, b).into()),
@@ -83,6 +80,6 @@ fn reposition_units(mut units: Query<&mut Follow2d, With<PlayerUnit>>) {
     let max_radius = get_unit_radius(count);
     for (i, mut unit) in units.iter_mut().enumerate() {
         let (x, y) = sunflower(i + 1, count, 2.0, max_radius);
-        unit.target = FollowTarget::Vec(Vec3::new(x, 0., y));
+        unit.target = Vec3::new(x, 0., y).into();
     }
 }
