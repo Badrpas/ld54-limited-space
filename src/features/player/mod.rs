@@ -34,5 +34,5 @@ pub fn init_player(mut commands: Commands, mut unit_ev: EventWriter<UnitSpawnEve
             ..default()
         },
     ));
-    unit_ev.send(UnitSpawnEvent::New);
+    unit_ev.send(UnitSpawnEvent::Delta(1));
 }

@@ -33,7 +33,7 @@ fn hp_ui_system(
             None => {
                 let ui_e = commands
                     .spawn((
-                        Follow2d::new().target(e).global(true),
+                        Follow2d::new().target(e).global(true).auto_despawn(true),
                         SpatialBundle::HIDDEN_IDENTITY,
                         Animator::new(Tween::new(
                             EaseMethod::Linear,
@@ -67,7 +67,11 @@ fn hp_ui_system(
                         });
                     })
                     .id();
-                commands.entity(e).insert(HpUiRef(ui_e));
+                commands.add(move |world: &mut World| {
+                    if let Some(mut cmd) = world.get_entity_mut(e) {
+                        cmd.insert(HpUiRef(ui_e));
+                    }
+                });
                 ui_e
             }
         };

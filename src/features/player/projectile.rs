@@ -59,7 +59,6 @@ fn projectile_update(
     for (projectile, tr, follow, hp) in &projectiles {
         let target_e = get_or_skip!(FollowTarget::Entity(e) = follow.target => e);
         let target = ok_or_skip!(trs.get(target_e));
-        // println!("{} {} {:.2}", target.translation, tr.translation, target.translation.distance_squared(tr.translation));
         if target.translation.zx().distance(tr.translation.zx()) < 0.5 {
             damages.send(DamageEntry {
                 target: target_e,

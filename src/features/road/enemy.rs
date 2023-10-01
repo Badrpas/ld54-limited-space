@@ -7,11 +7,13 @@ use crate::{
     features::{
         follow::Follow2d,
         hp::HitPoints,
-        player::{PlayerRoot, PlayerUnit},
+        hp_ui::HUD,
+        player::{unit::ShootInfo, unit_shoot::UnitShooting, PlayerRoot, PlayerUnit},
         road::chunk::CHUNK_SIZE,
-        team::Team, hp_ui::HUD,
+        team::Team,
     },
-    macros::*, util::sunflower::sunflower,
+    macros::*,
+    util::sunflower::sunflower,
 };
 
 pub struct EnemyPlugin;
@@ -57,18 +59,38 @@ impl DamageInvoker {
 }
 
 pub fn spawn_enemy(
+    time: Res<Time>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut extra_power: Local<f32>,
+    us: Res<UnitShooting>,
     player_root: Query<&Transform, With<PlayerRoot>>,
-    npcs: Query<(), With<Enemy>>,
-    units: Query<(), With<PlayerUnit>>,
+    npcs: Query<(&Speed, &DamageInvoker, &HitPoints), With<Enemy>>,
+    units: Query<&ShootInfo, With<PlayerUnit>>,
 ) {
+    *extra_power += time.delta_seconds() * 0.2;
     let player_tr = ok_or_ret!(player_root.get_single());
-    let player_power = units.iter().len();
-    let mut enemy_power = npcs.iter().len();
+    let player_power: f32 = units.iter().fold(0., |acc, info| {
+        acc + (us.damage / info.cooldown.as_secs_f32()) * (us.range / 5.)
+    }) + *extra_power;
+    let mut enemy_power: f32 = npcs
+        .iter()
+        .map(npc_power)
+        .reduce(|a, x| a + x)
+        .unwrap_or_default();
+    fn npc_power((speed, di, hp): (&Speed, &DamageInvoker, &HitPoints)) -> f32 {
+        (di.amount / di.cooldown.as_secs_f32()) * (**speed / 3.) * (hp.max / 100.)
+    }
+
     while player_power >= enemy_power {
-        let (x, y) = sunflower(enemy_power, enemy_power + 1, 2.0, CHUNK_SIZE / 2. - 0.05);
+        let (x, y) = sunflower(
+            enemy_power as usize,
+            player_power as usize,
+            2.0,
+            CHUNK_SIZE / 2. - 0.05,
+        );
+
         commands
             .spawn((
                 (
@@ -102,7 +124,7 @@ pub fn spawn_enemy(
                     ..default()
                 });
             });
-        enemy_power += 1;
-        log::info!("Spawned Enemy with {x} {y}");
+        enemy_power += 1.;
+        // log::info!("Spawned Enemy with {x} {y}");
     }
 }

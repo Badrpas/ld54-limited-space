@@ -1,9 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{
-    features::{hp::HitPoints, road::enemy::Enemy},
-    macros::*,
-};
+use crate::{features::road::enemy::Enemy, macros::*};
 
 use super::{projectile::ProjectileSpawn, unit::ShootInfo, PlayerUnit};
 
@@ -15,7 +12,8 @@ impl Plugin for UnitShootPlugin {
             range: 9.,
             damage: 1.,
         });
-        app.add_systems(Update, unit_shoot_system);
+        app.add_event::<AddDamage>();
+        app.add_systems(Update, (unit_shoot_system, increase_damage));
     }
 }
 
@@ -23,6 +21,15 @@ impl Plugin for UnitShootPlugin {
 pub struct UnitShooting {
     pub range: f32,
     pub damage: f32,
+}
+
+#[derive(Event, Clone)]
+pub struct AddDamage(pub f32);
+
+pub fn increase_damage(mut us: ResMut<UnitShooting>, mut reader: EventReader<AddDamage>) {
+    for ev in reader.iter() {
+        us.damage += ev.0;
+    }
 }
 
 pub fn unit_shoot_system(
@@ -36,7 +43,7 @@ pub fn unit_shoot_system(
         if !shoot_info.is_ready(&time) {
             continue;
         }
-        let (_closest_e, closest_tr) = some_or_skip!(enemies.iter().min_by(|a, b| {
+        let (closest_e, closest_tr) = some_or_skip!(enemies.iter().min_by(|a, b| {
             unit.translation()
                 .distance_squared(a.1.translation)
                 .total_cmp(&unit.translation().distance_squared(b.1.translation))
@@ -46,7 +53,7 @@ pub fn unit_shoot_system(
         }
         if shoot_info.try_shoot(&time) {
             projectiles_bus.send(ProjectileSpawn {
-                target: _closest_e,
+                target: closest_e,
                 damage: us.damage,
                 from: unit.translation(),
             });

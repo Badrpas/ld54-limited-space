@@ -17,7 +17,7 @@ pub fn fall_system(mut units: Query<(&mut HitPoints, &GlobalTransform)>) {
             continue;
         }
 
-        log::info!("Despawnint at {x:.2}");
+        // log::info!("Despawnint at {x:.2}");
         hp.current = 0.;
     }
 }

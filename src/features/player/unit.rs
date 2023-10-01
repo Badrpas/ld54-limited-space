@@ -33,9 +33,9 @@ impl Plugin for UnitPlugin {
     }
 }
 
-#[derive(Event, PartialEq, Eq)]
+#[derive(Event, PartialEq, Eq, Clone)]
 pub enum UnitSpawnEvent {
-    New,
+    Delta(i32),
 }
 
 #[derive(Component)]
@@ -66,7 +66,7 @@ impl ShootInfo {
 
 fn trigger_add_unit(kb: Res<Input<KeyCode>>, mut ev_writer: EventWriter<UnitSpawnEvent>) {
     if kb.just_pressed(KeyCode::M) {
-        ev_writer.send(UnitSpawnEvent::New);
+        ev_writer.send(UnitSpawnEvent::Delta(1));
     }
 }
 
@@ -78,7 +78,7 @@ fn add_unit(
     mut ev_reader: EventReader<UnitSpawnEvent>,
 ) {
     for event in ev_reader.iter() {
-        if event != &UnitSpawnEvent::New {
+        if !matches!(event, UnitSpawnEvent::Delta(_)) {
             continue;
         }
         if let Ok(root) = root.get_single() {

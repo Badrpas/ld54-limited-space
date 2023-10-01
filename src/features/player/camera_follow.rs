@@ -30,12 +30,11 @@ fn init_camera_follow(
     root: Query<Entity, With<PlayerRoot>>,
     camera: Query<Entity, With<Camera>>,
 ) {
-    log::info!("Initializing");
     let root = root.get_single().unwrap();
     let camera_mount = commands
         .spawn((
             Name::new("Camera mount point"),
-            SpatialBundle::from_transform(Transform::from_xyz(0.0, 12.5, 15.0)),
+            SpatialBundle::from_transform(Transform::from_xyz(0.0, 12.5, 10.0)),
         ))
         .set_parent(root)
         .id();

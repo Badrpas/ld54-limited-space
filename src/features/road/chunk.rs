@@ -16,7 +16,7 @@ impl Plugin for RoadChunkPlugin {
 #[derive(Component)]
 pub struct RoadChunk;
 
-pub const CHUNK_SIZE: f32 = 10.;
+pub const CHUNK_SIZE: f32 = 18.;
 
 #[derive(Resource, Default)]
 pub struct Road {
