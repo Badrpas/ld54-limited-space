@@ -76,20 +76,29 @@ pub fn spawn_enemy(
     }) + *extra_power;
     let mut enemy_power: f32 = npcs
         .iter()
+        .map(|(s, di, hp)|(**s, di.amount, di.cooldown.as_secs_f32(), hp.max))
         .map(npc_power)
         .reduce(|a, x| a + x)
         .unwrap_or_default();
-    fn npc_power((speed, di, hp): (&Speed, &DamageInvoker, &HitPoints)) -> f32 {
-        (di.amount / di.cooldown.as_secs_f32()) * (**speed / 3.) * (hp.max / 100.)
+
+    fn npc_power((speed, dmg, cd, hp): (f32, f32, f32, f32)) -> f32 {
+        (dmg / cd) + (speed / 3.) + (hp / 100.)
     }
 
-    while player_power >= enemy_power {
+    let diff = player_power - enemy_power;
+
+    while diff > 1. && player_power >= enemy_power {
         let (x, y) = sunflower(
             enemy_power as usize,
             player_power as usize,
             2.0,
             CHUNK_SIZE / 2. - 0.05,
         );
+
+        let speed = 6. + diff * 0.01;
+        let damage = 0.1 + diff * 0.03;
+        let cd = 0.2;
+        let hp = 10. + 10. * diff * 0.01;
 
         commands
             .spawn((
@@ -100,12 +109,12 @@ pub fn spawn_enemy(
                     LockedAxes::TRANSLATION_LOCKED_Y | LockedAxes::ROTATION_LOCKED,
                 ),
                 Name::new("NPC"),
-                Speed(4.),
-                DamageInvoker::new(1.2, 0.2),
+                Speed(speed),
+                DamageInvoker::new(damage, cd),
                 Enemy,
                 Team::Enemy,
                 HUD,
-                HitPoints::new(10.),
+                HitPoints::new(hp),
                 Follow2d::new(),
                 SpatialBundle {
                     transform: Transform::from_xyz(
@@ -124,7 +133,9 @@ pub fn spawn_enemy(
                     ..default()
                 });
             });
-        enemy_power += 1.;
-        // log::info!("Spawned Enemy with {x} {y}");
+
+        let added = npc_power((speed, damage, cd, hp));
+        log::info!("diff: {diff:.2} power {added:.2} speed {speed:.2} damage {damage:.2} cd {cd:.2} hp {hp:.2}");
+        enemy_power += added;
     }
 }

@@ -54,15 +54,18 @@ fn trigger_hits<E: Event + Clone>(
 fn on_chunk(new_chunks: Query<&Transform, Added<RoadChunk>>, mut populate: EventWriter<SpawnWall>) {
     let max_shift = CHUNK_SIZE / 2. - WALL_SIZE / 2.;
     for chunk in &new_chunks {
-        let kind = match rand::thread_rng().gen_range(0..=1) {
-            0 => populate::SpawnWallKind::AddUnit { delta: 2 },
-            1 => populate::SpawnWallKind::IncDamage { amount: 1. },
-            _ => populate::SpawnWallKind::AddUnit { delta: 1 },
-        };
-        populate.send(SpawnWall {
-            kind,
-            at: chunk.translation.xz()
-                + Vec2::X * rand::thread_rng().gen_range(-max_shift..max_shift),
-        });
+        for _ in 0..=rand::thread_rng().gen_range(0..2) {
+            let kind = match rand::thread_rng().gen_range(0..=1) {
+                0 => populate::SpawnWallKind::AddUnit { delta: 2 },
+                1 => populate::SpawnWallKind::IncDamage { amount: 1. },
+                _ => populate::SpawnWallKind::AddUnit { delta: 1 },
+            };
+            populate.send(SpawnWall {
+                kind,
+                at: chunk.translation.xz()
+                    + Vec2::X * rand::thread_rng().gen_range(-max_shift..max_shift),
+            });
+        }
     }
 }
+

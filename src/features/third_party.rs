@@ -13,10 +13,9 @@ impl Plugin for ThirdPartyPlugin {
 
         app.add_plugins(TweeningPlugin);
 
-        app.add_plugins((
-            RapierPhysicsPlugin::<NoUserData>::default(),
-            RapierDebugRenderPlugin::default(),
-        ));
+        app.add_plugins(RapierPhysicsPlugin::<NoUserData>::default());
+        // app.add_plugins(RapierDebugRenderPlugin::default());
+
         app.insert_resource(RapierConfiguration {
             gravity: Vec3::ZERO,
             ..default()

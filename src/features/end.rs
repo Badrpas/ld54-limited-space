@@ -14,7 +14,7 @@ pub fn end_system(
     units: Query<(), With<PlayerUnit>>,
 ) {
     if units.is_empty() {
-        log::info!("Le dead");
+        // log::info!("Le dead");
     }
 }
 

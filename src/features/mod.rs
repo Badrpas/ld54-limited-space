@@ -1,17 +1,17 @@
+pub mod brains;
+pub mod damage;
+pub mod end;
+pub mod fall;
+pub mod follow;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod fps_limit;
-pub mod setup;
-pub mod player;
-pub mod follow;
-pub mod third_party;
-pub mod road;
-pub mod fall;
 pub mod hp;
-pub mod team;
-pub mod brains;
-pub mod end;
 pub mod hp_ui;
-pub mod damage;
+pub mod player;
+pub mod road;
+pub mod setup;
+pub mod team;
+pub mod third_party;
 pub mod upgrade;
 use bevy::prelude::*;
 
@@ -21,6 +21,7 @@ impl Plugin for FeaturesPlugin {
     fn build(&self, app: &mut App) {
         #[cfg(not(target_arch = "wasm32"))]
         app.add_plugins(third_party::ThirdPartyPlugin);
+        #[cfg(not(target_arch = "wasm32"))]
         app.add_plugins(fps_limit::FpsLimitPlugin);
 
         app.add_plugins(setup::SetupPlugin);
@@ -37,4 +38,3 @@ impl Plugin for FeaturesPlugin {
         app.add_plugins(upgrade::UpgradePlugin);
     }
 }
-
